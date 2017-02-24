@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:context="http://www.springframework.org/schema/context" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd">
+    <context:property-placeholder location="${mule.env}.properties"/>
+    <flow name="read-fileFlow">
+        <poll doc:name="Poll">
+            <fixed-frequency-scheduler frequency="50000"/>
+            <set-payload value="#[new FileInputStream('${file.location}')]" doc:name="Set Payload" />
+        </poll>
+        <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
+        <set-property propertyName="MULE_ENCODING" value="ISO-8859-1" mimeType="text/xml" doc:name="Property"/>
+        <dw:transform-message metadata:id="e0f71f37-6663-466e-acec-38d4fbc9c12a" doc:name="Transform Message">
+            <dw:input-payload mimeType="application/xml"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+FileHeader: {
+	
+	author: payload.catalog.*book.author,
+	title: payload.catalog.*book.title,
+	price: payload.catalog.*book.price,
+	id: payload.catalog.*book.@id
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+</mule>
